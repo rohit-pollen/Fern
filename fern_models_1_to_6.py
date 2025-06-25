@@ -24,10 +24,20 @@ def fetch_data():
   orders_level_2 = client.query_and_wait(orders_level_2_query).to_dataframe()
   return product_listings, products, product_categories, product_subcategories, sellers, offers, orders_level_1, orders_level_2
 
+def preprocess_data():
+   return
+
+def train():
+   return
 
 def main():
    product_listings, products, product_categories, product_subcategories, sellers, offers, orders_level_1, orders_level_2 = fetch_data()
    print_df_shapes_auto(product_listings, products, product_categories, product_subcategories, sellers, offers, orders_level_1, orders_level_2)
+
+   preprocess_data()
+
+   train()
+   
    return
 
 if __name__ == "__main__":
