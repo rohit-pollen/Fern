@@ -1,26 +1,26 @@
 product_listings_query = """
-SELECT * FROM pollen-sandbox-warehouse.gsheeet_inventory.product_listings;
+SELECT * FROM pollen.product_listings;
 """
 products_query = """
-SELECT * FROM pollen-sandbox-warehouse.gsheeet_inventory.products;
+SELECT * FROM pollen.products;
 """
 product_categories_query = """
-SELECT * FROM pollen-sandbox-warehouse.gsheeet_inventory.product_categories;
+SELECT * FROM pollen.product_categories;
 """
 product_subcategories_query = """
-SELECT * FROM pollen-sandbox-warehouse.gsheeet_inventory.product_subcategories;
+SELECT * FROM pollen.product_subcategories;
 """
 sellers_query = """
-SELECT * FROM pollen-sandbox-warehouse.gsheeet_inventory.sellers;
+SELECT * FROM pollen.sellers;
 """
 offers_query = """
-SELECT * FROM pollen-sandbox-warehouse.gsheeet_inventory.offers;
+SELECT * FROM pollen.offers;
 """
 orders_level_1_query = """
-SELECT * FROM pollen-sandbox-warehouse.gsheeet_inventory.orders_level_1;
+SELECT * FROM pollen.orders_level_1;
 """
 orders_level_2_query = """
-SELECT * FROM pollen-sandbox-warehouse.gsheeet_inventory.orders_level_2;
+SELECT * FROM pollen.orders_level_2;
 """
 
 
