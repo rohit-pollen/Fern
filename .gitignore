@@ -2,3 +2,7 @@
 secrets/
 __pycache__/
 *.pyc
+catboost_info/*
+!catboost_info/catboost_training.json
+*.tsv
+*.tfevents
