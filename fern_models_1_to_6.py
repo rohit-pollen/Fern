@@ -65,11 +65,13 @@ def preprocess_data(product_listings, products, product_categories, product_subc
     return total_inv_after_sampled
 
 def train(total_inv_after_sampled):
-   sales_prob_price_model, sales_prob_y_val, sales_prob_pred_probs = train_sales_prob_price_model(total_inv_after_sampled)
-   plot_metrics_report(sales_prob_y_val, sales_prob_pred_probs, t = 0.65)
-   domestic_export_price_model, domestic_export_y_val, domestic_export_pred_probs = train_domestic_export_model(total_inv_after_sampled)
-   plot_metrics_report(domestic_export_y_val, domestic_export_pred_probs, t = 0.65)
-   return sales_prob_price_model, domestic_export_price_model
+    sales_prob_price_model, sales_prob_y_val, sales_prob_pred_probs = train_sales_prob_price_model(total_inv_after_sampled)
+    plot_metrics_report(sales_prob_y_val, sales_prob_pred_probs, t=0.65, model_name="sales_prob_price_model")
+
+    domestic_export_price_model, domestic_export_y_val, domestic_export_pred_probs = train_domestic_export_model(total_inv_after_sampled)
+    plot_metrics_report(domestic_export_y_val, domestic_export_pred_probs, t=0.65, model_name="domestic_export_price_model")
+
+    return sales_prob_price_model, domestic_export_price_model
 
 def main():
     product_listings, products, product_categories, product_subcategories, sellers, offers, orders_level_1, orders_level_2 = fetch_data()
@@ -82,8 +84,8 @@ if __name__ == "__main__":
     sales_prob_price_model, domestic_export_price_model = main()
     date_stamp = datetime.datetime.now().strftime("%Y%m%d")
 
-    sales_prob_price_model_filename = f"model/sales_prob_price_model_{date_stamp}.pkl"
-    domestic_export_price_model_filename = f"model/domestic_export_price_model_{date_stamp}.pkl"
+    sales_prob_price_model_filename = f"models/sales_prob_price_model_{date_stamp}.pkl"
+    domestic_export_price_model_filename = f"models/domestic_export_price_model_{date_stamp}.pkl"
 
     joblib.dump(sales_prob_price_model, sales_prob_price_model_filename)
     joblib.dump(domestic_export_price_model, domestic_export_price_model_filename)

@@ -3,6 +3,8 @@ from sklearn.utils.class_weight import compute_class_weight
 from sklearn.model_selection import train_test_split
 from catboost import CatBoostClassifier, Pool
 import matplotlib.pyplot as plt
+import os
+import contextlib
 from plot_metric.functions import BinaryClassification
 
 from utils.fern_static_variables import sales_prob_train_cols, sales_prob_cat_cols, sales_prob_target_col, sales_prob_price_model_params,\
@@ -73,18 +75,36 @@ def train_domestic_export_model(total_inv_after_sampled):
     return domestic_export_price_model, y_val, pred_probs
 
 # tune the threshold
-def plot_metrics_report(y_val, pred_probs, t):
+def plot_metrics_report(y_val, pred_probs, t, model_name, output_dir="metrics_output"):
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # Initialize BinaryClassification object
     bc = BinaryClassification(y_val, pred_probs[:, 1], labels=["Not Sellable", "Sellable"])
-    # Figures
-    plt.figure(figsize=(15,10))
-    plt.subplot2grid(shape=(2,6), loc=(0,0), colspan=2)
-    bc.plot_roc_curve(threshold = t)
-    plt.subplot2grid((2,6), (0,2), colspan=2)
-    bc.plot_precision_recall_curve(threshold = t)
-    plt.subplot2grid((2,6), (0,4), colspan=2)
-    bc.plot_class_distribution(pal_colors=['r','g','m','k'], threshold = t)
-    plt.subplot2grid((2,6), (1,1), colspan=2)
-    a = bc.plot_confusion_matrix(threshold = t)
 
-    plt.show()
-    bc.print_report(threshold = t)
+    # --- Create and save the metrics plot ---
+    fig = plt.figure(figsize=(15, 10))
+    plt.subplot2grid(shape=(2,6), loc=(0,0), colspan=2)
+    bc.plot_roc_curve(threshold=t)
+
+    plt.subplot2grid((2,6), (0,2), colspan=2)
+    bc.plot_precision_recall_curve(threshold=t)
+
+    plt.subplot2grid((2,6), (0,4), colspan=2)
+    bc.plot_class_distribution(pal_colors=['r','g','m','k'], threshold=t)
+
+    plt.subplot2grid((2,6), (1,1), colspan=2)
+    bc.plot_confusion_matrix(threshold=t)
+
+    # Save plot image
+    fig_path = os.path.join(output_dir, f"{model_name}_metrics_plot.png")
+    plt.tight_layout()
+    plt.savefig(fig_path)
+    plt.close(fig)
+
+    # --- Redirect print_report() output to a file ---
+    report_path = os.path.join(output_dir, f"{model_name}_classification_report.txt")
+    with open(report_path, "w") as f:
+        with contextlib.redirect_stdout(f):
+            bc.print_report(threshold=t)
+
+    print(f"[✓] Saved metrics and classification report for: {model_name}")
