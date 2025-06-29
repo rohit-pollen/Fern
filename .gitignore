@@ -6,4 +6,5 @@ catboost_info/*
 !catboost_info/catboost_training.json
 *.tsv
 *.tfevents
-model/*.pkl
+models/*.pkl
+metrics_output/
