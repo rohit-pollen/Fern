@@ -2,13 +2,16 @@ import os
 import json
 from google.cloud import bigquery
 from google.oauth2 import service_account
-from utils.fern_static_variables import *
-from utils.fern_preprocess import *
-from utils.fern_train import train_sales_prob_price_model, plot_metrics_report
-from utils.fern_misc import print_df_shapes_auto
 from google.oauth2.credentials import Credentials
 import joblib
 import datetime
+import warnings
+warnings.filterwarnings('ignore')
+
+from utils.fern_static_variables import *
+from utils.fern_preprocess import *
+from utils.fern_train import train_sales_prob_price_model, train_domestic_export_model, plot_metrics_report
+from utils.fern_misc import print_df_shapes_auto
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 key_path = os.path.join(BASE_DIR, 'secrets', 'default_key.json')
@@ -64,17 +67,23 @@ def preprocess_data(product_listings, products, product_categories, product_subc
 def train(total_inv_after_sampled):
    sales_prob_price_model, sales_prob_y_val, sales_prob_pred_probs = train_sales_prob_price_model(total_inv_after_sampled)
    plot_metrics_report(sales_prob_y_val, sales_prob_pred_probs, t = 0.65)
-   return sales_prob_price_model
+   domestic_export_price_model, domestic_export_y_val, domestic_export_pred_probs = train_domestic_export_model(total_inv_after_sampled)
+   plot_metrics_report(domestic_export_y_val, domestic_export_pred_probs, t = 0.65)
+   return sales_prob_price_model, domestic_export_price_model
 
 def main():
     product_listings, products, product_categories, product_subcategories, sellers, offers, orders_level_1, orders_level_2 = fetch_data()
     print_df_shapes_auto(product_listings, products, product_categories, product_subcategories, sellers, offers, orders_level_1, orders_level_2)
     total_inv_after_sampled = preprocess_data(product_listings, products, product_categories, product_subcategories, sellers, offers, orders_level_1, orders_level_2)
-    sales_prob_price_model = train(total_inv_after_sampled)
-    return sales_prob_price_model
+    sales_prob_price_model, domestic_export_price_model = train(total_inv_after_sampled)
+    return sales_prob_price_model, domestic_export_price_model
 
 if __name__ == "__main__":
-    sales_prob_price_model = main()
+    sales_prob_price_model, domestic_export_price_model = main()
     date_stamp = datetime.datetime.now().strftime("%Y%m%d")
+
     sales_prob_price_model_filename = f"model/sales_prob_price_model_{date_stamp}.pkl"
+    domestic_export_price_model_filename = f"model/domestic_export_price_model_{date_stamp}.pkl"
+
     joblib.dump(sales_prob_price_model, sales_prob_price_model_filename)
+    joblib.dump(domestic_export_price_model, domestic_export_price_model_filename)
