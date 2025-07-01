@@ -7,6 +7,7 @@ from sklearn.cluster import KMeans
 from utils.fern_misc import print_df_shapes_auto
 from utils.fern_static_variables import seller_name_to_short_form
 
+# adding helper functions for default 1 to 6
 
 def get_order_date(df_order_sheet1, df_order_sheet2):
     order_date_to_tracking_no_mapping = df_order_sheet1[['tracking_no', 'order_date']].drop_duplicates()
@@ -339,6 +340,7 @@ def get_price_sampling_inv_with_offer(inv_with_offer):
                                             0, inv_with_offer['sellability'])
     return inv_with_offer
 
+
 def merge_data_after_sample(inv_without_offer, inv_with_offer):
     total_inv_after_sampled = pd.concat([inv_without_offer, inv_with_offer], ignore_index=True)
     total_inv_after_sampled['order_price_per_unit_usd'] = total_inv_after_sampled['test_price_per_unit_usd']
@@ -367,4 +369,68 @@ def get_listing_condition_feat(total_inv_after_sampled):
 
     print(total_inv_after_sampled['listing_condition'].value_counts())
 
+    return total_inv_after_sampled
+
+
+# adding helper functions for default 7 to 10
+
+def get_price_sampling_inv_without_offer_plus_time_and_units_correction(inv_without_offer):
+    inv_without_offer['test_price_per_unit_usd'] = inv_without_offer.apply(get_dummy_prices_for_inv_without_offers, axis = 1)
+    inv_without_offer = inv_without_offer.explode('test_price_per_unit_usd')
+    inv_without_offer['test_price_per_unit_usd'] = inv_without_offer['test_price_per_unit_usd'].astype(float)
+
+    inv_without_offer['offer_day_diff_updated_inv'] = np.random.normal(loc=40, scale=3, size=inv_without_offer.shape[0])
+    inv_without_offer = inv_without_offer[inv_without_offer['asking_price_per_unit_usd'] != 0]
+    inv_without_offer['offer_day_diff_updated_inv'] = inv_without_offer['test_price_per_unit_usd'] / inv_without_offer['asking_price_per_unit_usd'] * inv_without_offer['offer_day_diff_updated_inv']
+    inv_without_offer['total_units'] = inv_without_offer['asking_price_per_unit_usd'] / inv_without_offer['test_price_per_unit_usd'] * inv_without_offer['total_units']
+    inv_without_offer['sellability'] = np.where((inv_without_offer['test_price_per_unit_usd'] == inv_without_offer['asking_price_per_unit_usd']), 1, inv_without_offer['sellability'])
+    return inv_without_offer
+
+
+def get_price_sampling_inv_with_offer_plus_time_and_units_correction(inv_with_offer):
+    inv_with_offer = inv_with_offer[~inv_with_offer['offer_price_per_unit_usd'].isin([0, np.nan])]
+    inv_with_offer['test_price_per_unit_usd'] = inv_with_offer.apply(get_dummy_prices_for_inv_with_offers, axis = 1)
+    inv_with_offer = inv_with_offer.explode('test_price_per_unit_usd')
+    inv_with_offer['test_price_per_unit_usd'] = inv_with_offer['test_price_per_unit_usd'].astype(float)
+    inv_with_offer = inv_with_offer[inv_with_offer['asking_price_per_unit_usd'] != 0]
+    return inv_with_offer
+
+def get_updated_time_for_offers(df):
+  if df['total_units_ordered'] != 0:
+    return df['test_price_per_unit_usd'] / df['order_price_per_unit_usd'] * df['offer_day_diff_updated_inv']
+  else:
+    return df['test_price_per_unit_usd'] / df['asking_price_per_unit_usd'] * df['offer_day_diff_updated_inv']
+  
+def get_updated_total_units_for_offers(df):
+    if df['total_units_ordered'] != 0:
+        return df['order_price_per_unit_usd'] / df['test_price_per_unit_usd'] * df['total_units']
+    else:
+        return df['asking_price_per_unit_usd'] / df['test_price_per_unit_usd'] * df['total_units']
+
+
+def update_sellability_for_offers(inv_with_offer):
+    # for inv_with_offer where units have been ordered (converted offers), not just order_price_per_unit_usd is sellable but prices above that also sellable
+    # but where units have NOT been ordered (non-converted offers), not just the offer_price_per_unit_usd is not sellable but also the prices less than offer_price_per_unit_usd are also not sellable
+
+    inv_with_offer['sellability'] = np.where((inv_with_offer['total_units_ordered'] == 0) & (inv_with_offer['test_price_per_unit_usd'] <= inv_with_offer['offer_price_per_unit_usd']),
+                                            0, inv_with_offer['sellability'])
+
+    inv_with_offer['sellability'] = np.where( ((inv_with_offer['total_units_ordered'] == 0) &
+    ((inv_with_offer['test_price_per_unit_usd'] > inv_with_offer['asking_price_per_unit_usd']) & (inv_with_offer['test_price_per_unit_usd'] <= inv_with_offer['retail_price_per_unit_usd'])) ),
+                                            0, inv_with_offer['sellability'])
+
+    inv_with_offer['sellability'] = np.where( ( (inv_with_offer['total_units_ordered'] != 0) &
+    ((inv_with_offer['test_price_per_unit_usd'] > inv_with_offer['asking_price_per_unit_usd']) & (inv_with_offer['test_price_per_unit_usd'] <= inv_with_offer['retail_price_per_unit_usd'])) ),
+                                            0, inv_with_offer['sellability'])
+    
+    return inv_with_offer
+
+
+def merge_inv_with_and_without_offers_after_sampling(inv_without_offer, inv_with_offer):
+    total_inv_after_sampled = pd.concat([inv_without_offer, inv_with_offer], ignore_index=True)
+    total_inv_after_sampled['order_price_per_unit_usd'] = total_inv_after_sampled['test_price_per_unit_usd']
+    total_inv_after_sampled = total_inv_after_sampled.drop('test_price_per_unit_usd', axis = 1)
+    total_inv_after_sampled['order_price_per_unit_usd'] = total_inv_after_sampled['order_price_per_unit_usd'].astype('float')
+    total_inv_after_sampled = total_inv_after_sampled.rename(columns = {'offer_day_diff_updated_inv' : 'time'})
+    total_inv_after_sampled['time'] = total_inv_after_sampled['time'].astype('float')
     return total_inv_after_sampled
