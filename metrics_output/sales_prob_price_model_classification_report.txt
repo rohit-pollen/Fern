@@ -1,0 +1,12 @@
+                   ________________________
+                  |  Classification Report |
+                   ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
+              precision    recall  f1-score   support
+
+Not Sellable       0.98      0.97      0.97     48838
+    Sellable       0.93      0.95      0.94     23613
+
+    accuracy                           0.96     72451
+   macro avg       0.96      0.96      0.96     72451
+weighted avg       0.96      0.96      0.96     72451
+
