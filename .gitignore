@@ -7,4 +7,3 @@ catboost_info/*
 *.tsv
 *.tfevents
 models/*.pkl
-metrics_output/
