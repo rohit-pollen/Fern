@@ -20,6 +20,10 @@ key_path = os.path.join(BASE_DIR, 'secrets', 'default_key.json')
 # client = bigquery.Client(credentials=credentials)
 
 def load_dict_from_json(filepath='default_key.json'):
+    """
+    Load a JSON file as a Python dictionary.
+    Used for loading service account or credentials data.
+    """
     with open(filepath, 'r') as f:
         return json.load(f)
 
@@ -30,17 +34,25 @@ client = bigquery.Client(project="dev-sd-lake", credentials=creds)
 
 
 def fetch_data():
-  product_listings = client.query_and_wait(product_listings_query).to_dataframe()
-  products = client.query_and_wait(products_query).to_dataframe()
-  product_categories = client.query_and_wait(product_categories_query).to_dataframe()
-  product_subcategories = client.query_and_wait(product_subcategories_query).to_dataframe()
-  sellers = client.query_and_wait(sellers_query).to_dataframe()
-  offers = client.query_and_wait(offers_query).to_dataframe()
-  orders_level_1 = client.query_and_wait(orders_level_1_query).to_dataframe()
-  orders_level_2 = client.query_and_wait(orders_level_2_query).to_dataframe()
-  return product_listings, products, product_categories, product_subcategories, sellers, offers, orders_level_1, orders_level_2
+    """
+    Query BigQuery tables and return data as DataFrames.
+    Includes product, seller, offer, and order information.
+    """
+    product_listings = client.query_and_wait(product_listings_query).to_dataframe()
+    products = client.query_and_wait(products_query).to_dataframe()
+    product_categories = client.query_and_wait(product_categories_query).to_dataframe()
+    product_subcategories = client.query_and_wait(product_subcategories_query).to_dataframe()
+    sellers = client.query_and_wait(sellers_query).to_dataframe()
+    offers = client.query_and_wait(offers_query).to_dataframe()
+    orders_level_1 = client.query_and_wait(orders_level_1_query).to_dataframe()
+    orders_level_2 = client.query_and_wait(orders_level_2_query).to_dataframe()
+    return product_listings, products, product_categories, product_subcategories, sellers, offers, orders_level_1, orders_level_2
 
 def preprocess_data(product_listings, products, product_categories, product_subcategories, sellers, offers, orders_level_1, orders_level_2):
+    """
+    Perform cleaning, merging, and feature engineering on the raw data.
+    Returns a processed and sampled DataFrame ready for model training.
+    """
     sellers, offers, orders, product_categories, product_subcategories, product_listings = merge_data(product_listings, products,
                                                                                             product_categories, product_subcategories,sellers, offers,
                                                                                             orders_level_1, orders_level_2)
@@ -65,6 +77,10 @@ def preprocess_data(product_listings, products, product_categories, product_subc
     return total_inv_after_sampled
 
 def train(total_inv_after_sampled):
+    """
+    Train both the sales probability model and the domestic/export model.
+    Also plots and saves metrics reports for each model.
+    """
     sales_prob_price_model, sales_prob_y_val, sales_prob_pred_probs = train_sales_prob_price_model(total_inv_after_sampled)
     plot_metrics_report(sales_prob_y_val, sales_prob_pred_probs, t=0.65, model_name="sales_prob_price_model")
 
@@ -74,6 +90,10 @@ def train(total_inv_after_sampled):
     return sales_prob_price_model, domestic_export_price_model
 
 def main():
+    """
+    Main function to execute the full pipeline: fetch → preprocess → train.
+    Returns the trained model objects for downstream use.
+    """
     product_listings, products, product_categories, product_subcategories, sellers, offers, orders_level_1, orders_level_2 = fetch_data()
     print_df_shapes_auto(product_listings, products, product_categories, product_subcategories, sellers, offers, orders_level_1, orders_level_2)
     total_inv_after_sampled = preprocess_data(product_listings, products, product_categories, product_subcategories, sellers, offers, orders_level_1, orders_level_2)
