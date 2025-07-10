@@ -63,13 +63,38 @@ domestic_export_price_model_params = {
     'random_seed': 42
 }
 
+time_at_a_price_model_params = {'loss_function': 'RMSE',
+          'od_wait' : 25,
+          'learning_rate': 0.8,
+          'depth': 5,
+          'min_data_in_leaf': 10}
+
+amount_at_a_price_model_params = {'loss_function': 'RMSE',
+          'od_wait' : 25,
+          'learning_rate': 0.8,
+          'depth': 5,
+          'min_data_in_leaf': 10}
+
 
 sales_prob_train_cols = ['sku_number', 'brand', 'product_category', 'product_subcategory', 'seller_name', 'total_units', 'shelf_life_remaining_days',
                                 'time', 'listing_condition', 'retail_price_per_unit_usd', 'order_price_per_unit_usd']
 sales_prob_cat_cols = ['sku_number', 'brand', 'product_category', 'product_subcategory', 'seller_name', 'listing_condition']
 sales_prob_target_col = 'sellability'
 
+
 domestic_export_train_cols = ['sku_number', 'brand', 'product_category', 'product_subcategory', 'seller_name', 'total_units', 'shelf_life_remaining_days',
               'time', 'listing_condition', 'retail_price_per_unit_usd', 'order_price_per_unit_usd', 'domestic_export']
 domestic_export_cat_cols = ['sku_number', 'brand', 'product_category', 'product_subcategory', 'seller_name', 'listing_condition', 'domestic_export']
 domestic_export_target_col = 'sellability'
+
+
+time_at_a_price_train_cols = ['sku_number', 'brand', 'product_category', 'product_subcategory', 'seller_name', 'total_units', 'shelf_life_remaining_days',
+              'listing_condition', 'retail_price_per_unit_usd', 'order_price_per_unit_usd', 'domestic_export', 'sellability']
+time_at_a_price_cat_cols = ['sku_number', 'brand', 'product_category', 'product_subcategory', 'seller_name', 'listing_condition', 'domestic_export']
+time_at_a_price_target_col = 'time'
+
+
+amount_at_a_price_train_cols = ['sku_number', 'brand', 'product_category', 'product_subcategory', 'seller_name', 'shelf_life_remaining_days',
+              'listing_condition', 'retail_price_per_unit_usd', 'order_price_per_unit_usd', 'domestic_export', 'sellability', 'time']
+amount_at_a_price_cat_cols = ['sku_number', 'brand', 'product_category', 'product_subcategory', 'seller_name', 'listing_condition', 'domestic_export']
+amount_at_a_price_target_col = 'total_units'

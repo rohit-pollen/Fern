@@ -10,7 +10,8 @@ warnings.filterwarnings('ignore')
 
 from utils.fern_static_variables import *
 from utils.fern_preprocess import *
-from utils.fern_train import train_sales_prob_price_model, train_domestic_export_model, plot_metrics_report
+from utils.fern_train import train_sales_prob_price_model, train_domestic_export_model, plot_metrics_report, train_time_at_a_price_model,\
+      train_amount_at_a_price_model
 from utils.fern_misc import print_df_shapes_auto
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -68,10 +69,14 @@ def preprocess_data(product_listings, products, product_categories, product_subc
     total_inv = impute_domestic_export_feature(total_inv)
 
     inv_with_offer, inv_without_offer = get_inv_with_offers_and_without_offers(total_inv)
-    inv_without_offer = get_price_sampling_inv_without_offer(inv_without_offer)
-    inv_with_offer = get_price_sampling_inv_with_offer(inv_with_offer)
 
-    total_inv_after_sampled = merge_data_after_sample(inv_without_offer, inv_with_offer)
+    inv_without_offer = get_price_sampling_inv_without_offer_plus_time_and_units_correction(inv_without_offer)
+    inv_with_offer = get_price_sampling_inv_with_offer_plus_time_and_units_correction(inv_with_offer)
+    inv_with_offer['offer_day_diff_updated_inv'] = inv_with_offer.apply(get_updated_time_for_offers, axis = 1)
+    inv_with_offer['total_units'] = inv_with_offer.apply(get_updated_total_units_for_offers, axis = 1)
+    inv_with_offer = update_sellability_for_offers(inv_with_offer)
+
+    total_inv_after_sampled = merge_inv_with_and_without_offers_after_sampling(inv_without_offer, inv_with_offer)
     total_inv_after_sampled = get_listing_condition_feat(total_inv_after_sampled)
 
     return total_inv_after_sampled
@@ -87,7 +92,10 @@ def train(total_inv_after_sampled):
     domestic_export_price_model, domestic_export_y_val, domestic_export_pred_probs = train_domestic_export_model(total_inv_after_sampled)
     plot_metrics_report(domestic_export_y_val, domestic_export_pred_probs, t=0.65, model_name="domestic_export_price_model")
 
-    return sales_prob_price_model, domestic_export_price_model
+    time_at_a_price_model, time_at_a_price_inverse_y_val, time_preds = train_time_at_a_price_model(total_inv_after_sampled)
+    amount_at_a_price_model, amount_at_a_price_inverse_y_val, amount_preds = train_amount_at_a_price_model(total_inv_after_sampled)
+
+    return sales_prob_price_model, domestic_export_price_model, time_at_a_price_model, amount_at_a_price_model
 
 def main():
     """
@@ -97,15 +105,19 @@ def main():
     product_listings, products, product_categories, product_subcategories, sellers, offers, orders_level_1, orders_level_2 = fetch_data()
     print_df_shapes_auto(product_listings, products, product_categories, product_subcategories, sellers, offers, orders_level_1, orders_level_2)
     total_inv_after_sampled = preprocess_data(product_listings, products, product_categories, product_subcategories, sellers, offers, orders_level_1, orders_level_2)
-    sales_prob_price_model, domestic_export_price_model = train(total_inv_after_sampled)
-    return sales_prob_price_model, domestic_export_price_model
+    sales_prob_price_model, domestic_export_price_model, time_at_a_price_model, amount_at_a_price_model = train(total_inv_after_sampled)
+    return sales_prob_price_model, domestic_export_price_model, time_at_a_price_model, amount_at_a_price_model
 
 if __name__ == "__main__":
-    sales_prob_price_model, domestic_export_price_model = main()
+    sales_prob_price_model, domestic_export_price_model, time_at_a_price_model, amount_at_a_price_model = main()
     date_stamp = datetime.datetime.now().strftime("%Y%m%d")
 
     sales_prob_price_model_filename = f"models/sales_prob_price_model_{date_stamp}.pkl"
     domestic_export_price_model_filename = f"models/domestic_export_price_model_{date_stamp}.pkl"
+    time_at_a_price_model_filename = f"models/time_at_a_price_model_{date_stamp}.pkl"
+    amount_at_a_price_model_filename = f"models/amount_at_a_price_model_{date_stamp}.pkl"
 
     joblib.dump(sales_prob_price_model, sales_prob_price_model_filename)
     joblib.dump(domestic_export_price_model, domestic_export_price_model_filename)
+    joblib.dump(time_at_a_price_model, time_at_a_price_model_filename)
+    joblib.dump(amount_at_a_price_model, amount_at_a_price_model_filename)
